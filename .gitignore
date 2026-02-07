@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+venv/
+.env
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Ferramentas externas (binários grandes)
+tools_bin/*.exe
+tools_bin/*.bin
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude
+.claude/
+
+# Relatórios gerados
+relatorios/
+
+# OS
+.DS_Store
+Thumbs.db
