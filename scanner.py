@@ -146,8 +146,11 @@ class VulnScanner:
         self.baseline_hash = ""
         self.baseline_text_stripped = ""
 
-        self._js_texts = {}  # url -> JS source text (cache para form discovery)
-        self.dynamic_form_sources = {}  # action_url -> "html" | "dynamic"
+        self._js_texts = {}
+        self.dynamic_form_sources = {}
+        self.target_ip = None
+        self.open_ports = []
+        self.server_info = {}
 
     def _cli_log(self, msg, level="info"):
         """Log para modo CLI com cores."""
@@ -1115,6 +1118,11 @@ class VulnScanner:
         return {
             "target": self.target,
             "timestamp": time.strftime('%Y-%m-%dT%H:%M:%S'),
+            "recon": {
+                "ip": self.target_ip,
+                "open_ports": self.open_ports,
+                "server_info": self.server_info,
+            },
             "stats": {
                 "pages_found": len(self.visited),
                 "forms_found": len(self.forms),
@@ -1218,12 +1226,16 @@ class VulnScanner:
 <div class="container">
   <h1>Relatório de Vulnerabilidades</h1>
   <p><strong>Alvo:</strong> {html.escape(self.target)}</p>
+  <p><strong>IP:</strong> {html.escape(self.target_ip or 'N/A')}
+  {(' | <strong>Portas:</strong> ' + html.escape(', '.join(str(p) for p in self.open_ports))) if self.open_ports else ''}
+  {(' | <strong>Servidor:</strong> ' + html.escape(', '.join(f'{k}: {v}' for k, v in self.server_info.items()))) if self.server_info else ''}</p>
   <p><strong>Data:</strong> {time.strftime('%d/%m/%Y %H:%M:%S')}</p>
   <div class="stats">
     <div class="stat-card"><strong>{len(self.visited)}</strong> páginas</div>
     <div class="stat-card"><strong>{len(self.forms)}</strong> formulários</div>
     <div class="stat-card"><strong>{len(self.api_endpoints)}</strong> API endpoints</div>
     <div class="stat-card"><strong>{len(self.js_urls)}</strong> arquivos JS</div>
+    <div class="stat-card"><strong>{len(self.open_ports)}</strong> portas abertas</div>
   </div>
   <div class="summary">
     <h2>Resumo</h2>
@@ -1234,7 +1246,10 @@ class VulnScanner:
     <thead><tr><th style="width:100px">Severidade</th><th style="width:220px">Categoria</th><th>Detalhes</th></tr></thead>
     <tbody>{rows if rows else '<tr><td colspan="3" style="text-align:center;color:#3fb950">Nenhuma vulnerabilidade encontrada!</td></tr>'}</tbody>
   </table>
-  <div class="footer"><p>VulnScanner | Uso autorizado apenas.</p></div>
+  <div class="footer">
+    <p>VulnScanner | Uso autorizado apenas.</p>
+    <p>Desenvolvido por <a href="https://www.linkedin.com/in/bernardo-ellwanger" target="_blank" style="color:#58a6ff;text-decoration:none">Bernardo Ellwanger</a></p>
+  </div>
 </div>
 </body>
 </html>"""
@@ -1255,6 +1270,45 @@ class VulnScanner:
         self._log(f"[+] Relatório salvo em: {html_path}", "success")
         return report_id
 
+    # -- Reconhecimento -----------------------------------------------------
+
+    def recon_target(self):
+        """Coleta IP, portas abertas e informações do servidor."""
+        self._log("[*] Reconhecimento do alvo...", "info")
+        hostname = self.domain.split(":")[0]
+
+        try:
+            self.target_ip = socket.gethostbyname(hostname)
+            self._log(f"[+] IP: {self.target_ip}", "success")
+        except socket.gaierror:
+            self._log("[!] Não foi possível resolver o IP do alvo", "warning")
+
+        try:
+            resp = self.session.head(self.target, timeout=5)
+            for header in ("Server", "X-Powered-By", "X-AspNet-Version"):
+                val = resp.headers.get(header)
+                if val:
+                    self.server_info[header] = val
+            if self.server_info:
+                self._log(f"[+] Servidor: {', '.join(f'{k}: {v}' for k, v in self.server_info.items())}", "success")
+        except Exception:
+            pass
+
+        common_ports = [21, 22, 25, 53, 80, 110, 143, 443, 445, 993, 995,
+                        3306, 3389, 5432, 5900, 6379, 8080, 8443, 27017]
+        self._log(f"[*] Escaneando {len(common_ports)} portas comuns...", "info")
+        target_ip = self.target_ip or hostname
+        for port in common_ports:
+            try:
+                with socket.create_connection((target_ip, port), timeout=1):
+                    self.open_ports.append(port)
+            except (socket.timeout, ConnectionRefusedError, OSError):
+                continue
+        if self.open_ports:
+            self._log(f"[+] Portas abertas: {', '.join(str(p) for p in self.open_ports)}", "success")
+        else:
+            self._log("[*] Nenhuma porta adicional encontrada", "info")
+
     # -- Execução -----------------------------------------------------------
 
     def run(self):
@@ -1265,6 +1319,8 @@ class VulnScanner:
         self._log(f"  Alvo: {self.target}", "banner")
         self._log(f"  Auth: {auth_type}", "banner")
         self._log("=" * 60, "banner")
+
+        self.recon_target()
 
         self._log("[*] Iniciando crawling inteligente (profundidade 3)...", "info")
         self.crawl()

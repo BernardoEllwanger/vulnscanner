@@ -2,7 +2,7 @@ function Sidebar({ activeTab, onTabChange, hasResults }) {
   const items = [
     { id: "scan", icon: "▶", label: "Novo Scan" },
     { id: "reports", icon: "📋", label: "Relatórios" },
-    { id: "discovery", icon: "🔍", label: "Discovery", disabled: !hasResults },
+    { id: "discovery", icon: "🔍", label: "Reconhecimento", disabled: !hasResults },
   ];
 
   return (
@@ -23,6 +23,11 @@ function Sidebar({ activeTab, onTabChange, hasResults }) {
           </button>
         ))}
       </nav>
+      <div className="sidebar-footer">
+        <a href="https://www.linkedin.com/in/bernardo-ellwanger" target="_blank" rel="noopener noreferrer">
+          Bernardo Ellwanger
+        </a>
+      </div>
     </aside>
   );
 }

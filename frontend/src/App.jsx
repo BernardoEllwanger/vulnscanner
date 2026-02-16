@@ -27,9 +27,11 @@ function App() {
     setAllResults((prev) => [...prev, results]);
   };
 
+  const lastResult = allResults.length > 0 ? allResults[allResults.length - 1] : null;
   const mergedResults = allResults.length > 0
     ? {
         target: allResults.map((r) => r.target).filter(Boolean).join(", "),
+        recon: lastResult?.recon || {},
         discovery: {
           pages: [...new Set(allResults.flatMap((r) => r.discovery?.pages || []))],
           api_endpoints: [...new Set(allResults.flatMap((r) => r.discovery?.api_endpoints || []))],

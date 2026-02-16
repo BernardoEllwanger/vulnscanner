@@ -57,7 +57,17 @@ function ReportDetail({ reportId, onBack }) {
 
       <div className="page-header">
         <h1>{report.target}</h1>
-        <p>{report.timestamp}</p>
+        <p>
+          {report.timestamp}
+          {report.recon?.ip && (
+            <span style={{ marginLeft: 16, color: "var(--text-secondary)" }}>
+              IP: <code>{report.recon.ip}</code>
+              {report.recon.open_ports?.length > 0 && (
+                <> | Portas: <code>{report.recon.open_ports.join(", ")}</code></>
+              )}
+            </span>
+          )}
+        </p>
       </div>
 
       <div className="stats-grid">
