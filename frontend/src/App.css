@@ -44,6 +44,11 @@ body {
   max-height: 100vh;
 }
 
+/* ===== Mobile Header ===== */
+.mobile-header {
+  display: none;
+}
+
 /* ===== Sidebar ===== */
 .sidebar {
   width: 220px;
@@ -846,5 +851,26 @@ body {
   .stat-card .value {
     font-size: 1.1rem;
     word-break: break-all;
+  }
+
+  .mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .mobile-header h2 {
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .mobile-header a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.7rem;
   }
 }
