@@ -17,20 +17,9 @@ function ReportDetail({ reportId, onBack }) {
   useEffect(() => {
     if (!reportId) return;
     setLoading(true);
-    fetch(`/api/reports/${reportId}`)
-      .then((r) => {
-        if (!r.ok) throw new Error("not found");
-        return r.json();
-      })
-      .then((data) => {
-        setReport(data);
-        setLoading(false);
-      })
-      .catch(() => {
-        const local = getLocalReport(reportId);
-        if (local) setReport(local);
-        setLoading(false);
-      });
+    const data = getLocalReport(reportId);
+    if (data) setReport(data);
+    setLoading(false);
   }, [reportId]);
 
   if (loading) {
@@ -148,14 +137,6 @@ function ReportDetail({ reportId, onBack }) {
         )}
       </div>
 
-      <div className="actions-row" style={{ marginTop: 16 }}>
-        <button
-          className="btn btn-secondary"
-          onClick={() => window.open(`/api/reports/${reportId}/html`, "_blank")}
-        >
-          Abrir HTML
-        </button>
-      </div>
     </div>
   );
 }

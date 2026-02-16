@@ -4,47 +4,28 @@ import { getLocalReports, deleteLocalReport } from "../utils/storage";
 function ReportsTab({ onViewReport }) {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [source, setSource] = useState("server");
 
   const loadReports = () => {
     setLoading(true);
-    fetch("/api/reports")
-      .then((r) => r.json())
-      .then((data) => {
-        setReports(data);
-        setSource("server");
-        setLoading(false);
-      })
-      .catch(() => {
-        const local = getLocalReports().map((r) => ({
-          id: r.id,
-          target: r.target || "?",
-          timestamp: r.timestamp || "?",
-          stats: r.stats || {},
-        }));
-        setReports(local);
-        setSource("local");
-        setLoading(false);
-      });
+    const local = getLocalReports().map((r) => ({
+      id: r.id,
+      target: r.target || "?",
+      timestamp: r.timestamp || "?",
+      stats: r.stats || {},
+    }));
+    setReports(local);
+    setLoading(false);
   };
 
   useEffect(() => {
     loadReports();
   }, []);
 
-  const handleDelete = async (e, reportId) => {
+  const handleDelete = (e, reportId) => {
     e.stopPropagation();
     if (!confirm("Excluir este relatório?")) return;
-    if (source === "server") {
-      await fetch(`/api/reports/${reportId}`, { method: "DELETE" });
-    }
     deleteLocalReport(reportId);
     loadReports();
-  };
-
-  const handleOpenHtml = (e, reportId) => {
-    e.stopPropagation();
-    window.open(`/api/reports/${reportId}/html`, "_blank");
   };
 
   if (loading) {
@@ -62,14 +43,7 @@ function ReportsTab({ onViewReport }) {
     <div>
       <div className="page-header">
         <h1>Relatórios</h1>
-        <p>
-          {reports.length} relatório(s) salvos
-          {source === "local" && (
-            <span style={{ color: "var(--yellow)", marginLeft: 8, fontSize: "0.8rem" }}>
-              (armazenamento local)
-            </span>
-          )}
-        </p>
+        <p>{reports.length} relatório(s) salvos</p>
       </div>
 
       {reports.length === 0 ? (
@@ -103,11 +77,6 @@ function ReportsTab({ onViewReport }) {
                 <div className="num">{r.stats?.api_endpoints_found ?? "?"}</div>
                 <div className="lbl">APIs</div>
               </div>
-              {source === "server" && (
-                <button className="btn btn-secondary btn-sm" onClick={(e) => handleOpenHtml(e, r.id)}>
-                  HTML
-                </button>
-              )}
               <button className="btn btn-danger btn-sm" onClick={(e) => handleDelete(e, r.id)}>
                 Excluir
               </button>

@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "./components/Sidebar";
 import ScanPanel from "./components/ScanPanel";
 import ReportsTab from "./components/ReportsTab";
 import ReportDetail from "./components/ReportDetail";
 import DiscoveryTab from "./components/DiscoveryTab";
+import { getLocalReports } from "./utils/storage";
 import "./App.css";
 
 function App() {
@@ -18,6 +19,13 @@ function App() {
     status: null,
   });
 
+  useEffect(() => {
+    const stored = getLocalReports();
+    if (stored.length > 0) {
+      setAllResults(stored);
+    }
+  }, []);
+
   const handleViewReport = (reportId) => {
     setSelectedReport(reportId);
     setTab("report-detail");
@@ -27,11 +35,14 @@ function App() {
     setAllResults((prev) => [...prev, results]);
   };
 
-  const lastResult = allResults.length > 0 ? allResults[allResults.length - 1] : null;
   const mergedResults = allResults.length > 0
     ? {
-        target: allResults.map((r) => r.target).filter(Boolean).join(", "),
-        recon: lastResult?.recon || {},
+        target: [...new Set(allResults.map((r) => r.target).filter(Boolean))].join(", "),
+        recon: {
+          ip: allResults.map((r) => r.recon?.ip).filter(Boolean).pop() || null,
+          open_ports: [...new Set(allResults.flatMap((r) => r.recon?.open_ports || []))].sort((a, b) => a - b),
+          server_info: Object.assign({}, ...allResults.map((r) => r.recon?.server_info || {})),
+        },
         discovery: {
           pages: [...new Set(allResults.flatMap((r) => r.discovery?.pages || []))],
           api_endpoints: [...new Set(allResults.flatMap((r) => r.discovery?.api_endpoints || []))],
