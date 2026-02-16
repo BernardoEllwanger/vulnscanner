@@ -25,8 +25,6 @@ if os.path.isdir(_tools_bin) and _tools_bin not in os.environ.get("PATH", ""):
 app = Flask(__name__, static_folder="frontend/dist", static_url_path="")
 CORS(app)
 
-REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "relatorios")
-os.makedirs(REPORTS_DIR, exist_ok=True)
 
 # ---------------------------------------------------------------------------
 # Estado dos scans em memória
@@ -94,9 +92,6 @@ def _run_scan(scan_id, target_url, token, login_url, username, password, externa
             finally:
                 if tmp_source and os.path.exists(tmp_source):
                     shutil.rmtree(tmp_source, ignore_errors=True)
-
-        report_id = scan_id
-        scanner.generate_report(output_dir=REPORTS_DIR, report_id=report_id)
 
         scan["results"] = scanner.get_structured_results()
         scan["status"] = "completed"
@@ -211,11 +206,6 @@ def scan_results(scan_id):
     if scan["results"]:
         return jsonify(scan["results"])
 
-    json_path = os.path.join(REPORTS_DIR, f"scan_{scan_id}.json")
-    if os.path.exists(json_path):
-        with open(json_path, encoding="utf-8") as f:
-            return jsonify(json.load(f))
-
     return jsonify({"error": "Resultados não encontrados"}), 404
 
 
@@ -228,73 +218,6 @@ def tools_status():
     """Retorna status de instalação das ferramentas externas."""
     manager = ExternalToolManager()
     return jsonify(manager.get_status())
-
-
-# ---------------------------------------------------------------------------
-# Reports (histórico de relatórios salvos)
-# ---------------------------------------------------------------------------
-
-@app.route("/api/reports")
-def list_reports():
-    """Lista todos os relatórios salvos na pasta relatorios/."""
-    reports = []
-    seen_ids = set()
-
-    for filename in sorted(os.listdir(REPORTS_DIR), reverse=True):
-        if filename.endswith(".json") and filename.startswith("scan_"):
-            report_id = filename[5:-5]  # remove "scan_" e ".json"
-            if report_id in seen_ids:
-                continue
-            seen_ids.add(report_id)
-
-            filepath = os.path.join(REPORTS_DIR, filename)
-            try:
-                with open(filepath, encoding="utf-8") as f:
-                    data = json.load(f)
-                reports.append({
-                    "id": report_id,
-                    "target": data.get("target", "?"),
-                    "timestamp": data.get("timestamp", "?"),
-                    "stats": data.get("stats", {}),
-                })
-            except Exception:
-                reports.append({"id": report_id, "target": "?", "timestamp": "?", "stats": {}})
-
-    return jsonify(reports)
-
-
-@app.route("/api/reports/<report_id>")
-def get_report(report_id):
-    """Retorna o JSON completo de um relatório."""
-    json_path = os.path.join(REPORTS_DIR, f"scan_{report_id}.json")
-    if not os.path.exists(json_path):
-        return jsonify({"error": "Relatório não encontrado"}), 404
-    with open(json_path, encoding="utf-8") as f:
-        return jsonify(json.load(f))
-
-
-@app.route("/api/reports/<report_id>/html")
-def get_report_html(report_id):
-    """Serve o relatório HTML."""
-    html_file = f"scan_{report_id}.html"
-    html_path = os.path.join(REPORTS_DIR, html_file)
-    if not os.path.exists(html_path):
-        return jsonify({"error": "Relatório HTML não encontrado"}), 404
-    return send_from_directory(REPORTS_DIR, html_file)
-
-
-@app.route("/api/reports/<report_id>", methods=["DELETE"])
-def delete_report(report_id):
-    """Exclui um relatório."""
-    deleted = False
-    for ext in (".json", ".html"):
-        path = os.path.join(REPORTS_DIR, f"scan_{report_id}{ext}")
-        if os.path.exists(path):
-            os.remove(path)
-            deleted = True
-    if deleted:
-        return jsonify({"ok": True})
-    return jsonify({"error": "Relatório não encontrado"}), 404
 
 
 # ---------------------------------------------------------------------------
@@ -320,6 +243,6 @@ def serve_spa(path):
 if __name__ == "__main__":
     print(f"\n{'='*50}")
     print("  VulnScanner Dashboard - Backend")
-    print(f"  Relatórios: {REPORTS_DIR}")
+    print(f"  http://localhost:5000")
     print(f"{'='*50}\n")
     app.run(host="0.0.0.0", port=5000, debug=True, threaded=True)

@@ -1,9 +1,10 @@
 import { useState } from "react";
 
-function DiscoveryTab({ results }) {
+function DiscoveryTab({ reports }) {
+  const [expandedId, setExpandedId] = useState(null);
   const [subTab, setSubTab] = useState("infra");
 
-  if (!results) {
+  if (!reports || reports.length === 0) {
     return (
       <div>
         <div className="page-header">
@@ -17,8 +18,12 @@ function DiscoveryTab({ results }) {
     );
   }
 
-  const recon = results.recon || {};
-  const discovery = results.discovery || {};
+  const selected = expandedId
+    ? reports.find((r) => r.id === expandedId) || reports[0]
+    : reports[0];
+
+  const recon = selected.recon || {};
+  const discovery = selected.discovery || {};
   const pages = discovery.pages || [];
   const apis = discovery.api_endpoints || [];
   const jsFiles = discovery.js_files || [];
@@ -34,20 +39,44 @@ function DiscoveryTab({ results }) {
     { id: "forms", label: `Formulários (${forms.length})` },
   ];
 
+  const handleSelect = (id) => {
+    setExpandedId(id);
+    setSubTab("infra");
+  };
+
   return (
     <div>
       <div className="page-header">
         <h1>Reconhecimento</h1>
-        <p>Recursos descobertos durante a varredura de {results.target}</p>
+        <p>{reports.length} varredura(s) disponível(is)</p>
+      </div>
+
+      <div className="recon-targets">
+        {reports.map((r) => (
+          <div
+            key={r.id}
+            className={`recon-target-card ${selected.id === r.id ? "active" : ""}`}
+            onClick={() => handleSelect(r.id)}
+          >
+            <div className="recon-target-info">
+              <h4>{r.target}</h4>
+              <p>{r.timestamp}</p>
+            </div>
+            <div className="recon-target-badges">
+              {r.recon?.ip && <span className="badge badge-info">{r.recon.ip}</span>}
+              {(r.recon?.open_ports?.length || 0) > 0 && (
+                <span className="badge badge-medio">{r.recon.open_ports.length} portas</span>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="stats-grid">
-        {recon.ip && (
-          <div className="stat-card">
-            <div className="value" style={{ fontSize: "1rem" }}>{recon.ip}</div>
-            <div className="label">IP do Alvo</div>
-          </div>
-        )}
+        <div className="stat-card">
+          <div className="value">{recon.ip || "N/A"}</div>
+          <div className="label">IP do Alvo</div>
+        </div>
         <div className="stat-card">
           <div className="value">{openPorts.length}</div>
           <div className="label">Portas Abertas</div>
@@ -85,18 +114,18 @@ function DiscoveryTab({ results }) {
       <div className="card">
         {subTab === "infra" && (
           <div>
-            <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: "8px 16px", marginBottom: 16 }}>
-              <span style={{ color: "var(--text-secondary)", fontWeight: 600 }}>IP:</span>
+            <div className="recon-info-grid">
+              <span className="recon-info-label">IP:</span>
               <span><code>{recon.ip || "N/A"}</code></span>
-              <span style={{ color: "var(--text-secondary)", fontWeight: 600 }}>Portas Abertas:</span>
+              <span className="recon-info-label">Portas Abertas:</span>
               <span>
                 {openPorts.length > 0 ? openPorts.map((p) => (
                   <code key={p} style={{ marginRight: 6 }}>{p}</code>
-                )) : <span style={{ color: "var(--text-secondary)" }}>Nenhuma porta adicional detectada</span>}
+                )) : <span style={{ color: "var(--text-secondary)" }}>Nenhuma porta detectada</span>}
               </span>
               {Object.entries(serverInfo).map(([key, val]) => (
                 <span key={key} style={{ display: "contents" }}>
-                  <span style={{ color: "var(--text-secondary)", fontWeight: 600 }}>{key}:</span>
+                  <span className="recon-info-label">{key}:</span>
                   <span><code>{val}</code></span>
                 </span>
               ))}

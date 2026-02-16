@@ -35,25 +35,6 @@ function App() {
     setAllResults((prev) => [...prev, results]);
   };
 
-  const mergedResults = allResults.length > 0
-    ? {
-        target: [...new Set(allResults.map((r) => r.target).filter(Boolean))].join(", "),
-        recon: {
-          ip: allResults.map((r) => r.recon?.ip).filter(Boolean).pop() || null,
-          open_ports: [...new Set(allResults.flatMap((r) => r.recon?.open_ports || []))].sort((a, b) => a - b),
-          server_info: Object.assign({}, ...allResults.map((r) => r.recon?.server_info || {})),
-        },
-        discovery: {
-          pages: [...new Set(allResults.flatMap((r) => r.discovery?.pages || []))],
-          api_endpoints: [...new Set(allResults.flatMap((r) => r.discovery?.api_endpoints || []))],
-          js_files: [...new Set(allResults.flatMap((r) => r.discovery?.js_files || []))],
-          forms: allResults.flatMap((r) => r.discovery?.forms || []).filter(
-            (form, i, arr) => arr.findIndex((f) => f.action === form.action && f.page_url === form.page_url) === i
-          ),
-        },
-      }
-    : null;
-
   const renderContent = () => {
     switch (tab) {
       case "scan":
@@ -75,7 +56,7 @@ function App() {
           />
         );
       case "discovery":
-        return <DiscoveryTab results={mergedResults} />;
+        return <DiscoveryTab reports={allResults} />;
       default:
         return (
           <ScanPanel
