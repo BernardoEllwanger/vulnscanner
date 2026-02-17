@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getLocalReports, deleteLocalReport } from "../utils/storage";
+import { getLocalReports, deleteLocalReport, clearAllReports } from "../utils/storage";
 
 function ReportsTab({ onViewReport }) {
   const [reports, setReports] = useState([]);
@@ -28,6 +28,12 @@ function ReportsTab({ onViewReport }) {
     loadReports();
   };
 
+  const handleClearAll = () => {
+    if (!confirm("Limpar todos os relatórios salvos?")) return;
+    clearAllReports();
+    loadReports();
+  };
+
   if (loading) {
     return (
       <div>
@@ -41,9 +47,16 @@ function ReportsTab({ onViewReport }) {
 
   return (
     <div>
-      <div className="page-header">
-        <h1>Relatórios</h1>
-        <p>{reports.length} relatório(s) salvos</p>
+      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <h1>Relatórios</h1>
+          <p>{reports.length} relatório(s) salvos</p>
+        </div>
+        {reports.length > 0 && (
+          <button className="btn btn-danger btn-sm" onClick={handleClearAll}>
+            Limpar Tudo
+          </button>
+        )}
       </div>
 
       {reports.length === 0 ? (

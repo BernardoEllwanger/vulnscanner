@@ -4,3 +4,4 @@ requests>=2.31
 beautifulsoup4>=4.12
 colorama>=0.4
 gunicorn>=21.2
+sqlmap

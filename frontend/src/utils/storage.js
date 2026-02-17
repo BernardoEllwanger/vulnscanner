@@ -33,11 +33,10 @@ export function deleteLocalReport(reportId) {
   }
 }
 
-export async function isBackendAvailable() {
+export function clearAllReports() {
   try {
-    const resp = await fetch("/api/reports", { signal: AbortSignal.timeout(2000) });
-    return resp.ok;
+    localStorage.removeItem(STORAGE_KEY);
   } catch {
-    return false;
+    // noop
   }
 }

@@ -20,7 +20,7 @@ function App() {
   });
 
   useEffect(() => {
-    const stored = getLocalReports();
+    const stored = getLocalReports().filter((r) => r.target && r.id);
     if (stored.length > 0) {
       setAllResults(stored);
     }
