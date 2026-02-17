@@ -40,10 +40,13 @@ function ScanPanel({ onScanComplete, onViewReport, scanState, setScanState }) {
 
   useEffect(() => {
     if (!scanId || !scanning) return;
-    if (esRef.current) return;
 
-    const fromIdx = logs.length;
-    const es = new EventSource(`${API}/api/scan/${scanId}/logs?from=${fromIdx}`);
+    if (esRef.current) {
+      esRef.current.close();
+      esRef.current = null;
+    }
+
+    const es = new EventSource(`${API}/api/scan/${scanId}/logs?from=0`);
     esRef.current = es;
 
     es.onmessage = (event) => {
@@ -68,26 +71,31 @@ function ScanPanel({ onScanComplete, onViewReport, scanState, setScanState }) {
     es.onerror = () => {
       es.close();
       esRef.current = null;
-      fetch(`${API}/api/scan/${scanId}/status`)
-        .then((r) => r.json())
-        .then((data) => {
-          if (data.status === "completed") {
-            updateState({ scanning: false, status: "completed" });
-            fetch(`${API}/api/scan/${scanId}/results`)
-              .then((r) => r.json())
-              .then((results) => {
-                const report = { id: scanId, ...results };
-                saveLocalReport(report);
-                onScanComplete(report);
-              })
-              .catch((err) => console.error("Erro ao buscar resultados:", err));
-          } else if (data.status === "error") {
+      setTimeout(() => {
+        fetch(`${API}/api/scan/${scanId}/status`)
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.status === "completed") {
+              updateState({ scanning: false, status: "completed" });
+              fetch(`${API}/api/scan/${scanId}/results`)
+                .then((r) => r.json())
+                .then((results) => {
+                  const report = { id: scanId, ...results };
+                  saveLocalReport(report);
+                  onScanComplete(report);
+                })
+                .catch((err) => console.error("Erro ao buscar resultados:", err));
+            } else if (data.status === "error") {
+              updateState({ scanning: false, status: "error" });
+            } else {
+              updateState({ scanning: false, status: "error" });
+              appendLog({ time: "--:--:--", level: "error", msg: "Conexão SSE perdida. Recarregue a página." });
+            }
+          })
+          .catch(() => {
             updateState({ scanning: false, status: "error" });
-          }
-        })
-        .catch(() => {
-          updateState({ scanning: false, status: "error" });
-        });
+          });
+      }, 1000);
     };
 
     return () => {
