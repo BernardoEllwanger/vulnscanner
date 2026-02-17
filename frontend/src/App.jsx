@@ -31,8 +31,11 @@ function App() {
     setTab("report-detail");
   };
 
-  const handleScanComplete = (results) => {
-    setAllResults((prev) => [...prev, results]);
+  const handleScanComplete = (report) => {
+    setAllResults((prev) => {
+      const exists = prev.some((r) => r.id === report.id);
+      return exists ? prev : [...prev, report];
+    });
   };
 
   const renderContent = () => {

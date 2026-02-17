@@ -55,10 +55,11 @@ function ScanPanel({ onScanComplete, onViewReport, scanState, setScanState }) {
         fetch(`${API}/api/scan/${scanId}/results`)
           .then((r) => r.json())
           .then((results) => {
-            saveLocalReport({ id: scanId, ...results });
-            onScanComplete(results);
+            const report = { id: scanId, ...results };
+            saveLocalReport(report);
+            onScanComplete(report);
           })
-          .catch(() => {});
+          .catch((err) => console.error("Erro ao buscar resultados:", err));
         return;
       }
       appendLog(log);
@@ -75,10 +76,11 @@ function ScanPanel({ onScanComplete, onViewReport, scanState, setScanState }) {
             fetch(`${API}/api/scan/${scanId}/results`)
               .then((r) => r.json())
               .then((results) => {
-                saveLocalReport({ id: scanId, ...results });
-                onScanComplete(results);
+                const report = { id: scanId, ...results };
+                saveLocalReport(report);
+                onScanComplete(report);
               })
-              .catch(() => {});
+              .catch((err) => console.error("Erro ao buscar resultados:", err));
           } else if (data.status === "error") {
             updateState({ scanning: false, status: "error" });
           }
