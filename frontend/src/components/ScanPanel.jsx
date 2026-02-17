@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import LogViewer from "./LogViewer";
 import { saveLocalReport } from "../utils/storage";
 
+const API = import.meta.env.VITE_API_URL || '';
+
 function ScanPanel({ onScanComplete, onViewReport, scanState, setScanState }) {
   const [url, setUrl] = useState("");
   const [token, setToken] = useState("");
@@ -27,7 +29,7 @@ function ScanPanel({ onScanComplete, onViewReport, scanState, setScanState }) {
   }, [setScanState]);
 
   useEffect(() => {
-    fetch("/api/tools/status")
+    fetch(`${API}/api/tools/status`)
       .then((r) => r.json())
       .then((tools) => {
         setAvailableTools(tools);
@@ -41,7 +43,7 @@ function ScanPanel({ onScanComplete, onViewReport, scanState, setScanState }) {
     if (esRef.current) return;
 
     const fromIdx = logs.length;
-    const es = new EventSource(`/api/scan/${scanId}/logs?from=${fromIdx}`);
+    const es = new EventSource(`${API}/api/scan/${scanId}/logs?from=${fromIdx}`);
     esRef.current = es;
 
     es.onmessage = (event) => {
@@ -50,7 +52,7 @@ function ScanPanel({ onScanComplete, onViewReport, scanState, setScanState }) {
         es.close();
         esRef.current = null;
         updateState({ scanning: false, status: "completed" });
-        fetch(`/api/scan/${scanId}/results`)
+        fetch(`${API}/api/scan/${scanId}/results`)
           .then((r) => r.json())
           .then((results) => {
             saveLocalReport({ id: scanId, ...results });
@@ -65,12 +67,12 @@ function ScanPanel({ onScanComplete, onViewReport, scanState, setScanState }) {
     es.onerror = () => {
       es.close();
       esRef.current = null;
-      fetch(`/api/scan/${scanId}/status`)
+      fetch(`${API}/api/scan/${scanId}/status`)
         .then((r) => r.json())
         .then((data) => {
           if (data.status === "completed") {
             updateState({ scanning: false, status: "completed" });
-            fetch(`/api/scan/${scanId}/results`)
+            fetch(`${API}/api/scan/${scanId}/results`)
               .then((r) => r.json())
               .then((results) => {
                 saveLocalReport({ id: scanId, ...results });
@@ -111,7 +113,7 @@ function ScanPanel({ onScanComplete, onViewReport, scanState, setScanState }) {
     updateState({ scanning: true, logs: [], status: "starting", scanId: null });
 
     try {
-      const resp = await fetch("/api/scan", {
+      const resp = await fetch(`${API}/api/scan`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

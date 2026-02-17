@@ -23,7 +23,7 @@ if os.path.isdir(_tools_bin) and _tools_bin not in os.environ.get("PATH", ""):
     os.environ["PATH"] = os.environ.get("PATH", "") + os.pathsep + _tools_bin
 
 app = Flask(__name__, static_folder="frontend/dist", static_url_path="")
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 
 # ---------------------------------------------------------------------------
