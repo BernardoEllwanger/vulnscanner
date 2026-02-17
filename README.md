@@ -16,11 +16,12 @@ VulnScanner realiza varreduras automatizadas em aplicações web, identificando 
 - **Análise de vulnerabilidades**: XSS (reflected/stored), SQL Injection, Open Redirect, CSRF, IDOR, Broken Access Control
 - **Verificação de headers de segurança**: CSP, HSTS, X-Frame-Options, X-Content-Type-Options, etc.
 - **Análise de SSL/TLS**, cookies, JWT e CORS
+- **Reconhecimento de infraestrutura**: resolução DNS, detecção de IP, port scanning de portas comuns
 - **Descoberta de recursos**: páginas, API endpoints, arquivos JS, formulários
 - **Autenticação**: suporte a Bearer Token e login via formulário
 - **Dashboard em tempo real** com logs via SSE
-- **Relatórios** em HTML e JSON, com filtro por severidade
-- **Armazenamento local** via localStorage quando o backend não está disponível
+- **Relatórios detalhados** com filtro por severidade, armazenados via localStorage
+- **Reconhecimento separado por URL** com dados de infraestrutura por alvo
 
 ## Ferramentas Externas Integradas
 
@@ -40,7 +41,7 @@ As ferramentas são detectadas automaticamente se estiverem no PATH do sistema.
 ### Backend
 
 ```bash
-git clone https://github.com/bellwanger/vulnscanner.git
+git clone https://github.com/BernardoEllwanger/vulnscanner.git
 cd vulnscanner
 pip install -r requirements.txt
 ```
@@ -85,6 +86,15 @@ python scanner.py https://meusite.com --token "eyJhbGciOi..."
 python scanner.py https://meusite.com --login-url https://meusite.com/login -u admin -p senha123
 ```
 
+## Deploy
+
+O projeto está configurado para deploy em produção:
+
+- **Frontend** (Vercel): build estático do React servido via CDN
+- **Backend** (Railway): Flask com Gunicorn, SSE para logs em tempo real, ferramentas externas baixadas automaticamente via `build.sh`
+
+Para configurar o frontend em produção, defina a variável de ambiente `VITE_API_URL` apontando para a URL do backend.
+
 ## Arquitetura
 
 ```
@@ -100,6 +110,10 @@ python scanner.py https://meusite.com --login-url https://meusite.com/login -u a
 │   └── src/
 │       ├── App.jsx
 │       └── components/ # ScanPanel, ReportsTab, ReportDetail, DiscoveryTab, etc.
+├── build.sh            # Download de ferramentas externas (Linux) para deploy
+├── Procfile            # Configuração do Gunicorn
+├── railway.json        # Configuração do Railway
+├── vercel.json         # Configuração do Vercel
 └── requirements.txt
 ```
 
